@@ -1,5 +1,5 @@
 .pnpm-store
 *-lock.yaml
 node_modules
-chrome-extension-react-starter-dist
+xslide-extension-dist
 .env.*

@@ -1,5 +1,5 @@
 {
-  "name": "chrome-extension-starter-react",
+  "name": "xslide-extension",
   "version": "1.0.0",
   "description": "A template with everything you need to develop your Chromium based browser extension with all the features.",
   "license": "MIT",
@@ -17,7 +17,9 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.475.0",
+    "postcss-parent-selector": "^1.0.0",
     "react": "^18.1.0",
+    "react-bootstrap-icons": "^1.11.5",
     "react-dom": "^18.1.0",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7"

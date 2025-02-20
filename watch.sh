@@ -1,4 +1,4 @@
 while true; do
-  inotifywait -r -e modify,create,delete ./chrome-extension-react-starter-dist
-  cp -r ./chrome-extension-react-starter-dist /media/sf_GUEST/
+  inotifywait -r -e modify,create,delete ./xslide-extension-dist
+  cp -r ./xslide-extension-dist /media/sf_GUEST/
 done

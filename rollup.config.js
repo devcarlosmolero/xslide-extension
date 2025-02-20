@@ -17,7 +17,7 @@ const dotenvResult = dotenv.config({
 export default {
   input: 'src/manifest.json',
   output: {
-    dir: 'chrome-extension-react-starter-dist',
+    dir: 'xslide-extension-dist',
     format: 'esm',
     chunkFileNames: path.join('chunks', '[name]-[hash].js'),
   },
@@ -25,7 +25,11 @@ export default {
     postcss({
       inject: true,
       minimize: isProduction,
-      plugins: [require('@tailwindcss/postcss'), require('autoprefixer')],
+      plugins: [
+        require('@tailwindcss/postcss'),
+        require('autoprefixer'),
+        require('postcss-parent-selector'),
+      ],
     }),
     replace({
       'process.env.NODE_ENV': process.env.NODE_ENV,
