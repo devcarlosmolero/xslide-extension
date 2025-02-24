@@ -1,63 +1,86 @@
-import React from 'react';
-import { Linkedin } from 'react-bootstrap-icons';
-import CSSContainer from './CSSContainer';
+import { IThreadDataItem } from '@/lib/@types/common'
+import { IPostAuthor } from '@/lib/@types/post'
+import Scraper from '@/lib/api/scraper'
+import React from 'react'
+import { Linkedin } from 'react-bootstrap-icons'
+import CSSContainer from './CSSContainer'
 
 export default function XCarouselButton(): JSX.Element {
-    async function scrollToBottom() {
-        return new Promise<void>((resolve) => {
-            const scrollInterval = setInterval(() => {
-                window.scrollBy(0, window.innerHeight);
-                if (window.innerHeight + window.scrollY >= document.body.scrollHeight) {
-                    clearInterval(scrollInterval);
-                    resolve();
-                }
-            }, 1000);
-        });
-    }
+  async function scrollAndCollectPosts(
+    author: IPostAuthor,
+  ): Promise<IThreadDataItem[]> {
+    const data: IThreadDataItem[] = []
+    const savedPosts: string[] = []
 
-    function generateTweetId(tweetText: string, index: number): string {
-        return `tweet-${index}-${tweetText.slice(0, 20).replace(/\s+/g, "-")}`;
-    }
+    return new Promise<IThreadDataItem[] | never>((resolve) => {
+      const scrollInterval = setInterval(async () => {
+        const posts = Array.from(Scraper.getPosts())
 
-    function getThreadData() {
-        const data: any[] = [];
-        const seenTweets = new Set();
+        for (const post of posts) {
+          const postAuthor = Scraper.getPostAuthor(post as HTMLElement)
+          const hasLinks = post.querySelector('a') !== null
 
-        document.querySelectorAll("div[data-testid='tweetText']").forEach((tweetText, index) => {
-            const topParent = tweetText?.parentElement?.parentElement?.parentElement;
-            const tweetContent = Array.from(tweetText.querySelectorAll("span")).map((span: HTMLSpanElement) => span.innerText)
-            const tweetId = generateTweetId(tweetContent.join(""), index);
+          if (postAuthor.username !== author.username) {
+            clearInterval(scrollInterval)
+            resolve(data)
+            return
+          }
 
-            if (!seenTweets.has(tweetId)) {
-                seenTweets.add(tweetId);
-                data.push({
-                    id: tweetId,
-                    text: tweetContent.join(""),
-                    image: (topParent?.querySelector("div[data-testid='tweetPhoto'] > img[draggable=true]") as HTMLImageElement)?.src,
-                });
-            }
-        });
+          if (hasLinks) {
+            return
+          }
 
-        return data;
-    }
+          const topParent = Scraper.getPostTopParent(post as HTMLElement)
 
-    async function handleClick() {
-        await scrollToBottom();
+          const postContent = Array.from(post.childNodes)
+            .map(Scraper.getContentFromNodes)
+            .join('')
 
-        const threadData = getThreadData();
+          const tweetId = Scraper.generatePostId(postContent)
 
-        const url = chrome.runtime.getURL("./pages/carousel/index.html");
-        const a = document.createElement("a");
-        a.href = `${url}?threadData=${encodeURIComponent(JSON.stringify(threadData))}`;
-        a.target = "_blank";
-        a.click();
-    }
+          if (!savedPosts.includes(tweetId)) {
+            savedPosts.push(tweetId)
+            data.push({
+              id: tweetId,
+              text: postContent,
+              image: Scraper.getPostImage(topParent as HTMLElement),
+            })
+          }
+        }
 
-    return (
-        <CSSContainer>
-            <button onClick={handleClick} className="bg-transparent border-white border-2 rounded p-1 h-full ml-2">
-                <Linkedin className="size-4" />
-            </button>
-        </CSSContainer>
+        window.scrollBy(0, window.innerHeight)
+
+        if (window.innerHeight + window.scrollY >= document.body.scrollHeight) {
+          clearInterval(scrollInterval)
+          resolve(data)
+        }
+      }, 1000)
+    })
+  }
+
+  async function handleClick() {
+    const author = Scraper.getPostAuthor(
+      document.querySelector("div[data-testid='tweetText']"),
     )
+
+    const threadData = await scrollAndCollectPosts(author)
+
+    const url = chrome.runtime.getURL('./pages/carousel/index.html')
+    const a = document.createElement('a')
+    a.href = `${url}?threadData=${encodeURIComponent(
+      JSON.stringify(threadData),
+    )}&author=${encodeURIComponent(JSON.stringify(author))}`
+    a.target = '_blank'
+    a.click()
+  }
+  return (
+    <CSSContainer>
+      <button
+        onClick={handleClick}
+        className="bg-transparent border-white border-2 rounded p-1 h-full mr-2"
+      >
+        <Linkedin className="size-4" />
+      </button>
+    </CSSContainer>
+  )
 }
